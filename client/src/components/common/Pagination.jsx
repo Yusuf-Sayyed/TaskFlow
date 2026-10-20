@@ -72,10 +72,10 @@ export function Pagination({ page = 1, totalPages = 1, total = 0, limit = 10, on
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-sm transition-all cursor-pointer ${
               p === page
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-indigo-600 text-white shadow-sm font-bold'
+                : 'text-slate-600 hover:bg-slate-100 font-medium'
             }`}
           >
             {p}

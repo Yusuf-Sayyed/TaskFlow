@@ -1,26 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { useDebounce } from '../../hooks/useDebounce';
 
 export function SearchInput({ value = '', onChange, placeholder = 'Search...', className = '' }) {
   const [internalVal, setInternalVal] = useState(value);
   const debouncedVal = useDebounce(internalVal, 350);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
-  // Sync when prop value changes from outside (e.g. URL change or reset)
+  // Sync internal state if parent value changed externally
   useEffect(() => {
-    setInternalVal(value);
+    setInternalVal(value || '');
   }, [value]);
 
   // Trigger parent onChange only when debounced value differs from prop
   useEffect(() => {
-    if (debouncedVal !== value) {
-      onChange(debouncedVal);
+    if (debouncedVal !== value && onChangeRef.current) {
+      onChangeRef.current(debouncedVal);
     }
-  }, [debouncedVal, onChange, value]);
+  }, [debouncedVal, value]);
 
   const handleClear = () => {
     setInternalVal('');
-    onChange('');
+    if (onChangeRef.current) {
+      onChangeRef.current('');
+    }
   };
 
   return (

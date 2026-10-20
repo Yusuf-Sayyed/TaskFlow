@@ -88,9 +88,9 @@ export function TaskStatusChangeModal({ isOpen, onClose, task, onStatusUpdated }
                   key={st}
                   type="button"
                   onClick={() => setSelectedStatus(st)}
-                  className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-sm font-semibold transition-all ${
+                  className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
                     selectedStatus === st
-                      ? 'border-brand-500 bg-brand-50/50 text-brand-900 ring-2 ring-brand-500/20'
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-900 ring-2 ring-indigo-500/20 shadow-sm'
                       : 'border-slate-200 hover:bg-slate-50 text-slate-800'
                   }`}
                 >
@@ -100,7 +100,7 @@ export function TaskStatusChangeModal({ isOpen, onClose, task, onStatusUpdated }
                     {st === 'Cancelled' && <XCircle className="w-4 h-4 text-rose-600" />}
                     <span>{st}</span>
                   </div>
-                  <span className="text-xs text-slate-400 font-normal">
+                  <span className="text-xs text-slate-500 font-normal">
                     {st === 'Completed'
                       ? 'Sets completion date, locks record'
                       : st === 'Cancelled'
@@ -127,7 +127,7 @@ export function TaskStatusChangeModal({ isOpen, onClose, task, onStatusUpdated }
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -136,7 +136,7 @@ export function TaskStatusChangeModal({ isOpen, onClose, task, onStatusUpdated }
               type="button"
               onClick={handleTransition}
               disabled={!selectedStatus || submitting}
-              className="px-5 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm transition-all disabled:opacity-50"
+              className="px-5 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition-all disabled:opacity-50 cursor-pointer"
             >
               {submitting ? 'Applying Transition...' : 'Confirm Transition'}
             </button>

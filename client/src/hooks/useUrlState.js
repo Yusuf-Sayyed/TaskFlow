@@ -1,12 +1,13 @@
 import { useSearchParams } from 'react-router-dom';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 export function useUrlState(defaults = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const defaultsRef = useRef(defaults);
 
   // Parse state from current URL
   const state = useMemo(() => {
-    const parsed = { ...defaults };
+    const parsed = { ...defaultsRef.current };
     for (const [key, value] of searchParams.entries()) {
       if (value !== undefined && value !== '') {
         parsed[key] = value;
@@ -16,7 +17,7 @@ export function useUrlState(defaults = {}) {
     if (parsed.page) parsed.page = parseInt(parsed.page, 10) || 1;
     if (parsed.limit) parsed.limit = parseInt(parsed.limit, 10) || 10;
     return parsed;
-  }, [searchParams, defaults]);
+  }, [searchParams]);
 
   // Update URL parameters
   const updateState = useCallback(
@@ -45,16 +46,17 @@ export function useUrlState(defaults = {}) {
   );
 
   const resetFilters = useCallback(() => {
+    const def = defaultsRef.current;
     setSearchParams(
       new URLSearchParams({
         page: '1',
-        limit: String(defaults.limit || 10),
-        sortBy: defaults.sortBy || 'createdAt',
-        sortOrder: defaults.sortOrder || 'desc',
+        limit: String(def.limit || 10),
+        sortBy: def.sortBy || 'createdAt',
+        sortOrder: def.sortOrder || 'desc',
       }),
       { replace: true }
     );
-  }, [defaults, setSearchParams]);
+  }, [setSearchParams]);
 
   return {
     state,

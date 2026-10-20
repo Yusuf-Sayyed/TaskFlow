@@ -13,32 +13,36 @@ import { formatDate, DEPARTMENTS, EMPLOYEE_STATUSES } from '../../utils/formatte
 import {
   Plus,
   Download,
-  Filter,
   Eye,
   Edit2,
   Trash2,
   UserX,
   ArrowUpDown,
   RotateCcw,
+  Loader2,
+  ArrowLeft,
 } from 'lucide-react';
+
+const DEFAULT_FILTERS = {
+  search: '',
+  department: '',
+  status: '',
+  sortBy: 'createdAt',
+  sortOrder: 'desc',
+  page: 1,
+  limit: 10,
+};
 
 export function EmployeeListPage() {
   const { success, error: toastError } = useToast();
 
-  const { state, updateState, resetFilters } = useUrlState({
-    search: '',
-    department: '',
-    status: '',
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
-    page: 1,
-    limit: 10,
-  });
+  const { state, updateState, resetFilters } = useUrlState(DEFAULT_FILTERS);
 
   const [employees, setEmployees] = useState([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState(null);
 
   // Modals state
@@ -49,18 +53,27 @@ export function EmployeeListPage() {
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Extract primitive values for stable dependencies
+  const search = state.search || '';
+  const department = state.department || '';
+  const status = state.status || '';
+  const sortBy = state.sortBy || 'createdAt';
+  const sortOrder = state.sortOrder || 'desc';
+  const page = state.page || 1;
+  const limit = state.limit || 10;
+
   const fetchEmployees = useCallback(async () => {
     try {
-      setLoading(true);
+      setIsFetching(true);
       setError(null);
       const params = new URLSearchParams();
-      if (state.search) params.append('search', state.search);
-      if (state.department) params.append('department', state.department);
-      if (state.status) params.append('status', state.status);
-      if (state.sortBy) params.append('sortBy', state.sortBy);
-      if (state.sortOrder) params.append('sortOrder', state.sortOrder);
-      params.append('page', String(state.page || 1));
-      params.append('limit', String(state.limit || 10));
+      if (search) params.append('search', search);
+      if (department) params.append('department', department);
+      if (status) params.append('status', status);
+      if (sortBy) params.append('sortBy', sortBy);
+      if (sortOrder) params.append('sortOrder', sortOrder);
+      params.append('page', String(page));
+      params.append('limit', String(limit));
 
       const res = await apiClient.get(`/employees?${params.toString()}`);
       setEmployees(res.data.data || []);
@@ -69,56 +82,75 @@ export function EmployeeListPage() {
     } catch (err) {
       setError(err.message || 'Failed to fetch employees');
     } finally {
-      setLoading(false);
+      setIsFetching(false);
+      setInitialLoading(false);
     }
-  }, [state]);
+  }, [search, department, status, sortBy, sortOrder, page, limit]);
 
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
 
-  const handleSearchChange = (val) => {
-    updateState({ search: val }, true); // resets to page 1
-  };
+  const handleSearchChange = useCallback(
+    (val) => {
+      updateState({ search: val }, true);
+    },
+    [updateState]
+  );
 
-  const handleDepartmentChange = (val) => {
-    updateState({ department: val }, true);
-  };
+  const handleDepartmentChange = useCallback(
+    (val) => {
+      updateState({ department: val }, true);
+    },
+    [updateState]
+  );
 
-  const handleStatusChange = (val) => {
-    updateState({ status: val }, true);
-  };
+  const handleStatusChange = useCallback(
+    (val) => {
+      updateState({ status: val }, true);
+    },
+    [updateState]
+  );
 
-  const handleSortChange = (field) => {
-    if (state.sortBy === field) {
-      updateState({ sortOrder: state.sortOrder === 'asc' ? 'desc' : 'asc' });
-    } else {
-      updateState({ sortBy: field, sortOrder: 'asc' });
-    }
-  };
+  const handleSortChange = useCallback(
+    (field) => {
+      if (sortBy === field) {
+        updateState({ sortOrder: sortOrder === 'asc' ? 'desc' : 'asc' });
+      } else {
+        updateState({ sortBy: field, sortOrder: 'asc' });
+      }
+    },
+    [sortBy, sortOrder, updateState]
+  );
 
-  const handlePageChange = (newPage) => {
-    updateState({ page: newPage });
-  };
+  const handlePageChange = useCallback(
+    (newPage) => {
+      updateState({ page: newPage });
+    },
+    [updateState]
+  );
 
-  const handleLimitChange = (newLimit) => {
-    updateState({ limit: newLimit }, true);
-  };
+  const handleLimitChange = useCallback(
+    (newLimit) => {
+      updateState({ limit: newLimit }, true);
+    },
+    [updateState]
+  );
 
-  const handleOpenAddModal = () => {
+  const handleOpenAddModal = useCallback(() => {
     setSelectedEmployee(null);
     setFormModalOpen(true);
-  };
+  }, []);
 
-  const handleOpenEditModal = (emp) => {
+  const handleOpenEditModal = useCallback((emp) => {
     setSelectedEmployee(emp);
     setFormModalOpen(true);
-  };
+  }, []);
 
-  const handleOpenDelete = (emp) => {
+  const handleOpenDelete = useCallback((emp) => {
     setEmployeeToDelete(emp);
     setDeleteConfirmOpen(true);
-  };
+  }, []);
 
   const handleConfirmDelete = async () => {
     if (!employeeToDelete) return;
@@ -138,22 +170,38 @@ export function EmployeeListPage() {
 
   const handleExportCsv = () => {
     const params = new URLSearchParams();
-    if (state.search) params.append('search', state.search);
-    if (state.department) params.append('department', state.department);
-    if (state.status) params.append('status', state.status);
-    if (state.sortBy) params.append('sortBy', state.sortBy);
-    if (state.sortOrder) params.append('sortOrder', state.sortOrder);
+    if (search) params.append('search', search);
+    if (department) params.append('department', department);
+    if (status) params.append('status', status);
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
 
     const exportUrl = `${API_BASE_URL}/employees/export?${params.toString()}`;
     window.open(exportUrl, '_blank');
   };
+
+  const isFiltered = Boolean(search || department || status);
 
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Employee Directory</h2>
+          <Link
+            to="/"
+            className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors mb-1 group"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 mr-1 text-slate-400 group-hover:-translate-x-0.5 group-hover:text-indigo-600 transition-transform" />
+            <span>Back to Dashboard</span>
+          </Link>
+          <div className="flex items-center space-x-2">
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              Employee Directory
+            </h2>
+            {isFetching && !initialLoading && (
+              <Loader2 className="w-4 h-4 text-brand-600 animate-spin" />
+            )}
+          </div>
           <p className="text-sm text-slate-500 mt-0.5">
             Manage organization members, verify availability periods, and review workload capacity.
           </p>
@@ -170,7 +218,7 @@ export function EmployeeListPage() {
           </button>
           <button
             onClick={handleOpenAddModal}
-            className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm shadow-brand-500/20 transition-all"
+            className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Employee</span>
@@ -184,7 +232,7 @@ export function EmployeeListPage() {
           {/* Search bar */}
           <div className="flex-1">
             <SearchInput
-              value={state.search || ''}
+              value={search}
               onChange={handleSearchChange}
               placeholder="Search by name, employee ID..."
             />
@@ -193,7 +241,7 @@ export function EmployeeListPage() {
           {/* Department Filter */}
           <div className="w-full md:w-48">
             <select
-              value={state.department || ''}
+              value={department}
               onChange={(e) => handleDepartmentChange(e.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 shadow-sm"
             >
@@ -209,7 +257,7 @@ export function EmployeeListPage() {
           {/* Status Filter */}
           <div className="w-full md:w-44">
             <select
-              value={state.status || ''}
+              value={status}
               onChange={(e) => handleStatusChange(e.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 shadow-sm"
             >
@@ -223,7 +271,7 @@ export function EmployeeListPage() {
           </div>
 
           {/* Reset Filters Button */}
-          {(state.search || state.department || state.status) && (
+          {isFiltered && (
             <button
               onClick={resetFilters}
               className="inline-flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
@@ -240,23 +288,19 @@ export function EmployeeListPage() {
 
       {/* Employees Table Container */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        {loading ? (
+        {initialLoading ? (
           <SkeletonTable rows={8} cols={7} />
         ) : employees.length === 0 ? (
           <EmptyState
             icon={UserX}
             title="No employees found"
             description={
-              state.search || state.department || state.status
+              isFiltered
                 ? 'Try adjusting your search criteria or clearing active filters.'
                 : 'Get started by creating your first employee profile.'
             }
-            actionText={
-              state.search || state.department || state.status ? 'Clear Filters' : 'Add Employee'
-            }
-            onAction={
-              state.search || state.department || state.status ? resetFilters : handleOpenAddModal
-            }
+            actionText={isFiltered ? 'Clear Filters' : 'Add Employee'}
+            onAction={isFiltered ? resetFilters : handleOpenAddModal}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -409,12 +453,12 @@ export function EmployeeListPage() {
         )}
 
         {/* Pagination Bar */}
-        {!loading && (
+        {!initialLoading && (
           <Pagination
-            page={state.page || 1}
+            page={page}
             totalPages={totalPages}
             total={total}
-            limit={state.limit || 10}
+            limit={limit}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
           />

@@ -33,27 +33,32 @@ import {
   AlertTriangle,
   Clock,
   Layers,
+  Loader2,
+  ArrowLeft,
 } from 'lucide-react';
+
+const DEFAULT_TASK_FILTERS = {
+  search: '',
+  department: '',
+  priority: '',
+  status: '',
+  isOverdue: '',
+  sortBy: 'createdAt',
+  sortOrder: 'desc',
+  page: 1,
+  limit: 10,
+};
 
 export function TaskListPage() {
   const { success, error: toastError } = useToast();
 
-  const { state, updateState, resetFilters } = useUrlState({
-    search: '',
-    department: '',
-    priority: '',
-    status: '',
-    isOverdue: '',
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
-    page: 1,
-    limit: 10,
-  });
+  const { state, updateState, resetFilters } = useUrlState(DEFAULT_TASK_FILTERS);
 
   const [tasks, setTasks] = useState([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState(null);
 
   // Modals state
@@ -67,20 +72,31 @@ export function TaskListPage() {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Primitive values for stable dependencies
+  const search = state.search || '';
+  const department = state.department || '';
+  const priority = state.priority || '';
+  const status = state.status || '';
+  const isOverdue = state.isOverdue || '';
+  const sortBy = state.sortBy || 'createdAt';
+  const sortOrder = state.sortOrder || 'desc';
+  const page = state.page || 1;
+  const limit = state.limit || 10;
+
   const fetchTasks = useCallback(async () => {
     try {
-      setLoading(true);
+      setIsFetching(true);
       setError(null);
       const params = new URLSearchParams();
-      if (state.search) params.append('search', state.search);
-      if (state.department) params.append('department', state.department);
-      if (state.priority) params.append('priority', state.priority);
-      if (state.status) params.append('status', state.status);
-      if (state.isOverdue) params.append('isOverdue', state.isOverdue);
-      if (state.sortBy) params.append('sortBy', state.sortBy);
-      if (state.sortOrder) params.append('sortOrder', state.sortOrder);
-      params.append('page', String(state.page || 1));
-      params.append('limit', String(state.limit || 10));
+      if (search) params.append('search', search);
+      if (department) params.append('department', department);
+      if (priority) params.append('priority', priority);
+      if (status) params.append('status', status);
+      if (isOverdue) params.append('isOverdue', isOverdue);
+      if (sortBy) params.append('sortBy', sortBy);
+      if (sortOrder) params.append('sortOrder', sortOrder);
+      params.append('page', String(page));
+      params.append('limit', String(limit));
 
       const res = await apiClient.get(`/tasks?${params.toString()}`);
       setTasks(res.data.data || []);
@@ -89,55 +105,55 @@ export function TaskListPage() {
     } catch (err) {
       setError(err.message || 'Failed to fetch tasks');
     } finally {
-      setLoading(false);
+      setIsFetching(false);
+      setInitialLoading(false);
     }
-  }, [state]);
+  }, [search, department, priority, status, isOverdue, sortBy, sortOrder, page, limit]);
 
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
 
-  const handleSearchChange = (val) => {
+  const handleSearchChange = useCallback((val) => {
     updateState({ search: val }, true);
-  };
+  }, [updateState]);
 
-  const handleDepartmentChange = (val) => {
+  const handleDepartmentChange = useCallback((val) => {
     updateState({ department: val }, true);
-  };
+  }, [updateState]);
 
-  const handlePriorityChange = (val) => {
+  const handlePriorityChange = useCallback((val) => {
     updateState({ priority: val }, true);
-  };
+  }, [updateState]);
 
-  const handleStatusChange = (val) => {
+  const handleStatusChange = useCallback((val) => {
     updateState({ status: val }, true);
-  };
+  }, [updateState]);
 
-  const handleOverdueToggle = () => {
-    updateState({ isOverdue: state.isOverdue === 'true' ? '' : 'true' }, true);
-  };
+  const handleOverdueToggle = useCallback(() => {
+    updateState({ isOverdue: isOverdue === 'true' ? '' : 'true' }, true);
+  }, [isOverdue, updateState]);
 
-  const handleSortChange = (field) => {
-    if (state.sortBy === field) {
-      updateState({ sortOrder: state.sortOrder === 'asc' ? 'desc' : 'asc' });
+  const handleSortChange = useCallback((field) => {
+    if (sortBy === field) {
+      updateState({ sortOrder: sortOrder === 'asc' ? 'desc' : 'asc' });
     } else {
-      // For priority default to desc (Critical first)
       updateState({ sortBy: field, sortOrder: field === 'priority' ? 'desc' : 'asc' });
     }
-  };
+  }, [sortBy, sortOrder, updateState]);
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = useCallback((newPage) => {
     updateState({ page: newPage });
-  };
+  }, [updateState]);
 
-  const handleLimitChange = (newLimit) => {
+  const handleLimitChange = useCallback((newLimit) => {
     updateState({ limit: newLimit }, true);
-  };
+  }, [updateState]);
 
-  const handleOpenAddModal = () => {
+  const handleOpenAddModal = useCallback(() => {
     setSelectedTaskForEdit(null);
     setTaskFormOpen(true);
-  };
+  }, []);
 
   const handleOpenEditModal = (task) => {
     if (task.status === 'Completed' || task.status === 'Cancelled') {
@@ -204,7 +220,19 @@ export function TaskListPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Task Management</h2>
+          <Link
+            to="/"
+            className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors mb-1 group"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 mr-1 text-slate-400 group-hover:-translate-x-0.5 group-hover:text-indigo-600 transition-transform" />
+            <span>Back to Dashboard</span>
+          </Link>
+          <div className="flex items-center space-x-2">
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Task Management</h2>
+            {isFetching && !initialLoading && (
+              <Loader2 className="w-4 h-4 text-brand-600 animate-spin" />
+            )}
+          </div>
           <p className="text-sm text-slate-500 mt-0.5">
             Monitor deliverables, enforce workflow state transitions, and track deadlines.
           </p>
@@ -221,7 +249,7 @@ export function TaskListPage() {
           </button>
           <button
             onClick={handleOpenAddModal}
-            className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm shadow-brand-500/20 transition-all"
+            className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>New Task</span>
@@ -318,7 +346,7 @@ export function TaskListPage() {
 
       {/* Task Table Container */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        {loading ? (
+        {initialLoading ? (
           <SkeletonTable rows={8} cols={7} />
         ) : tasks.length === 0 ? (
           <EmptyState
@@ -543,12 +571,12 @@ export function TaskListPage() {
         )}
 
         {/* Pagination Bar */}
-        {!loading && (
+        {!initialLoading && (
           <Pagination
-            page={state.page || 1}
+            page={page}
             totalPages={totalPages}
             total={total}
-            limit={state.limit || 10}
+            limit={limit}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
           />

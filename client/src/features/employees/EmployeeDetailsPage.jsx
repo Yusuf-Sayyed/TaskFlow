@@ -81,6 +81,14 @@ export function EmployeeDetailsPage() {
     }
   };
 
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/employees');
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner text="Loading employee profile and workload history..." />;
   }
@@ -88,13 +96,14 @@ export function EmployeeDetailsPage() {
   if (error || !employee) {
     return (
       <div className="space-y-4">
-        <Link
-          to="/employees"
-          className="inline-flex items-center text-sm font-semibold text-brand-600 hover:text-brand-700"
+        <button
+          type="button"
+          onClick={handleBack}
+          className="inline-flex items-center space-x-2 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition-all cursor-pointer group"
         >
-          <ArrowLeft className="w-4 h-4 mr-1.5" />
-          <span>Back to directory</span>
-        </Link>
+          <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
+          <span>Back to Directory</span>
+        </button>
         <ErrorBanner message={error || 'Employee not found'} onRetry={fetchEmployeeData} />
       </div>
     );
@@ -109,13 +118,15 @@ export function EmployeeDetailsPage() {
     <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto">
       {/* Navigation & Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <Link
-          to="/employees"
-          className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+        <button
+          type="button"
+          onClick={handleBack}
+          className="inline-flex items-center space-x-2 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition-all cursor-pointer group"
+          title="Return to employee directory"
         >
-          <ArrowLeft className="w-4 h-4 mr-1.5" />
+          <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
           <span>Back to Employee Directory</span>
-        </Link>
+        </button>
 
         <div className="flex items-center space-x-3">
           <button

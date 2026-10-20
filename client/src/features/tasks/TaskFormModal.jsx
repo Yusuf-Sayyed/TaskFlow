@@ -409,7 +409,7 @@ export function TaskFormModal({ isOpen, onClose, task = null, onSaved }) {
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm shadow-brand-500/30 transition-all disabled:opacity-50"
+              className="px-5 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-all disabled:opacity-50 cursor-pointer"
             >
               {submitting ? 'Saving Task...' : isEditing ? 'Save Changes' : 'Create Task'}
             </button>

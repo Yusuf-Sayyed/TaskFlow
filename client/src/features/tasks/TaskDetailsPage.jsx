@@ -74,6 +74,14 @@ export function TaskDetailsPage() {
     }
   };
 
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/tasks');
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner text="Loading task details..." />;
   }
@@ -81,13 +89,14 @@ export function TaskDetailsPage() {
   if (error || !task) {
     return (
       <div className="space-y-4">
-        <Link
-          to="/tasks"
-          className="inline-flex items-center text-sm font-semibold text-brand-600 hover:text-brand-700"
+        <button
+          type="button"
+          onClick={handleBack}
+          className="inline-flex items-center space-x-2 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition-all cursor-pointer group"
         >
-          <ArrowLeft className="w-4 h-4 mr-1.5" />
-          <span>Back to task list</span>
-        </Link>
+          <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
+          <span>Back to Task List</span>
+        </button>
         <ErrorBanner message={error || 'Task not found'} onRetry={fetchTask} />
       </div>
     );
@@ -103,19 +112,21 @@ export function TaskDetailsPage() {
     <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto">
       {/* Top Navigation & Action Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <Link
-          to="/tasks"
-          className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+        <button
+          type="button"
+          onClick={handleBack}
+          className="inline-flex items-center space-x-2 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition-all cursor-pointer group"
+          title="Return to task management list"
         >
-          <ArrowLeft className="w-4 h-4 mr-1.5" />
+          <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
           <span>Back to Tasks</span>
-        </Link>
+        </button>
 
         <div className="flex items-center space-x-3">
           {!isImmutable && (
             <button
               onClick={() => setStatusModalOpen(true)}
-              className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm shadow-brand-500/20 transition-all"
+              className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition-all cursor-pointer"
             >
               <span>Change Status</span>
               <ArrowRight className="w-4 h-4" />
@@ -311,7 +322,7 @@ export function TaskDetailsPage() {
                   <button
                     key={nextSt}
                     onClick={() => setStatusModalOpen(true)}
-                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-colors"
+                    className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer"
                   >
                     <span>Advance to {nextSt}</span>
                     <ArrowRight className="w-3 h-3" />

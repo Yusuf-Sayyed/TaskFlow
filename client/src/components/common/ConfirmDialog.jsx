@@ -41,10 +41,10 @@ export function ConfirmDialog({
           type="button"
           onClick={onConfirm}
           disabled={isLoading}
-          className={`px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-sm transition-all disabled:opacity-50 ${
+          className={`px-4 py-2 text-sm font-bold text-white rounded-xl shadow-sm transition-all disabled:opacity-50 cursor-pointer ${
             isDanger
               ? 'bg-rose-600 hover:bg-rose-700 focus:ring-4 focus:ring-rose-200'
-              : 'bg-brand-600 hover:bg-brand-700 focus:ring-4 focus:ring-brand-200'
+              : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200'
           }`}
         >
           {isLoading ? 'Processing...' : confirmText}

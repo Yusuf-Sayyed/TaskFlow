@@ -10,31 +10,64 @@ import { TaskDetailsPage } from './features/tasks/TaskDetailsPage';
 import { EmployeeFormModal } from './features/employees/EmployeeFormModal';
 import { TaskFormModal } from './features/tasks/TaskFormModal';
 
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+
 export default function App() {
   const [quickEmployeeModal, setQuickEmployeeModal] = useState(false);
   const [quickTaskModal, setQuickTaskModal] = useState(false);
 
   return (
-    <ToastProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route
-              path="/"
-              element={
-                <DashboardPage
-                  onOpenCreateEmployee={() => setQuickEmployeeModal(true)}
-                  onOpenCreateTask={() => setQuickTaskModal(true)}
-                />
-              }
-            />
-            <Route path="/employees" element={<EmployeeListPage />} />
-            <Route path="/employees/:id" element={<EmployeeDetailsPage />} />
-            <Route path="/tasks" element={<TaskListPage />} />
-            <Route path="/tasks/:id" element={<TaskDetailsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
+    <ErrorBoundary>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route
+                path="/"
+                element={
+                  <ErrorBoundary>
+                    <DashboardPage
+                      onOpenCreateEmployee={() => setQuickEmployeeModal(true)}
+                      onOpenCreateTask={() => setQuickTaskModal(true)}
+                    />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path="/employees"
+                element={
+                  <ErrorBoundary>
+                    <EmployeeListPage />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path="/employees/:id"
+                element={
+                  <ErrorBoundary>
+                    <EmployeeDetailsPage />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path="/tasks"
+                element={
+                  <ErrorBoundary>
+                    <TaskListPage />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path="/tasks/:id"
+                element={
+                  <ErrorBoundary>
+                    <TaskDetailsPage />
+                  </ErrorBoundary>
+                }
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
 
         {/* Global Quick Modals triggered from dashboard */}
         <EmployeeFormModal
@@ -50,5 +83,6 @@ export default function App() {
         />
       </BrowserRouter>
     </ToastProvider>
+  </ErrorBoundary>
   );
 }
