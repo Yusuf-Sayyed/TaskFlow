@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu, Activity, ShieldCheck, ArrowLeft } from 'lucide-react';
 
-export function Header({ onMenuClick, title = 'TaskFlow Pro' }) {
+export function Header({ onMenuClick, title = 'TaskFlow' }) {
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === '/';

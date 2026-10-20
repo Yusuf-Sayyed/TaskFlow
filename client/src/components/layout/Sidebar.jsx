@@ -34,7 +34,7 @@ export function Sidebar({ isOpen, onClose }) {
         <div className="flex items-center justify-between h-16 px-6 border-b border-slate-800">
           <div className="flex items-center space-x-3">
             <div>
-              <span className="text-lg font-bold tracking-tight text-white">CrewDesk</span>
+              <span className="text-lg font-bold tracking-tight text-white">TaskFlow</span>
             </div>
           </div>
           <button

@@ -1,4 +1,4 @@
-# TaskFlow Pro — Employee & Task Management System
+# TaskFlow — Employee & Task Management System
 
 A production-grade MERN Stack application for enterprise workforce management and task lifecycle tracking with strict backend business rule enforcement.
 
@@ -6,7 +6,7 @@ A production-grade MERN Stack application for enterprise workforce management an
 
 ## 1. Project Overview
 
-TaskFlow Pro is an administrative dashboard built for enterprise workforce and task lifecycle operations. It provides end-to-end management of employees across five core departments (`Development`, `Design`, `QA`, `HR`, `Sales`) and enforces critical operational constraints directly in the backend architecture.
+TaskFlow is an administrative dashboard built for enterprise workforce and task lifecycle operations. It provides end-to-end management of employees across five core departments (`Development`, `Design`, `QA`, `HR`, `Sales`) and enforces critical operational constraints directly in the backend architecture.
 
 ### Key Capabilities:
 - **Employee Lifecycle Management**: Full CRUD operations with normalized lowercase email uniqueness, sequential atomic ID generation (`EMP-0001`), and active task protection upon deletion.

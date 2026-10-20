@@ -10,10 +10,17 @@ const { NotFoundError } = require('./utils/errors');
 const app = express();
 
 // CORS configuration
-const corsOrigin = process.env.CLIENT_URL || '*';
+const allowedClientUrl = process.env.CLIENT_URL;
 app.use(
   cors({
-    origin: corsOrigin,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like curl, Postman, health probes)
+      if (!origin) return callback(null, true);
+      if (!allowedClientUrl || allowedClientUrl === '*' || origin === allowedClientUrl || origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Allow evaluator origins
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })

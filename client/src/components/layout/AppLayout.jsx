@@ -13,7 +13,7 @@ export function AppLayout() {
     if (path.startsWith('/employees')) return 'Employee Directory';
     if (path.startsWith('/tasks/')) return 'Task Details';
     if (path.startsWith('/tasks')) return 'Task Management';
-    return 'TaskFlow Pro';
+    return 'TaskFlow';
   };
 
   return (
