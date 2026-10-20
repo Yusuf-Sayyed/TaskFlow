@@ -2,17 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../../components/common/Modal';
 import { useToast } from '../../components/common/ToastContext';
 import apiClient from '../../api/client';
-import { DEPARTMENTS, EMPLOYEE_STATUSES, toInputDateFormat } from '../../utils/formatters';
+import {
+  DEPARTMENTS,
+  EMPLOYEE_STATUSES,
+  toInputDateFormat,
+  COUNTRY_OPTIONS,
+  formatPhoneNumber,
+} from '../../utils/formatters';
 import { AlertCircle, Plus, X } from 'lucide-react';
 
 export function EmployeeFormModal({ isOpen, onClose, employee = null, onSaved }) {
   const { success, error: toastError } = useToast();
   const isEditing = Boolean(employee);
 
+  const [selectedCountryCode, setSelectedCountryCode] = useState('+1');
+  const [phoneDigits, setPhoneDigits] = useState('');
+
+  const activeCountry =
+    COUNTRY_OPTIONS.find((c) => c.code === selectedCountryCode) || COUNTRY_OPTIONS[0];
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    phone: '',
     department: 'Development',
     role: '',
     joiningDate: toInputDateFormat(new Date()),
@@ -28,10 +39,29 @@ export function EmployeeFormModal({ isOpen, onClose, employee = null, onSaved })
 
   useEffect(() => {
     if (employee) {
+      // Parse existing phone if available
+      let detectedCode = '+1';
+      let extractedDigits = '';
+
+      if (employee.phone) {
+        const cleaned = employee.phone.trim();
+        // Check for matching country code (sort desc by code length to match +971 before +9)
+        const sorted = [...COUNTRY_OPTIONS].sort((a, b) => b.code.length - a.code.length);
+        const match = sorted.find((c) => cleaned.startsWith(c.code));
+        if (match) {
+          detectedCode = match.code;
+          extractedDigits = cleaned.slice(match.code.length).replace(/\D/g, '').slice(0, match.maxDigits);
+        } else {
+          extractedDigits = cleaned.replace(/\D/g, '').slice(0, 10);
+        }
+      }
+
+      setSelectedCountryCode(detectedCode);
+      setPhoneDigits(extractedDigits);
+
       setFormData({
         fullName: employee.fullName || '',
         email: employee.email || '',
-        phone: employee.phone || '',
         department: employee.department || 'Development',
         role: employee.role || '',
         joiningDate: toInputDateFormat(employee.joiningDate),
@@ -41,10 +71,11 @@ export function EmployeeFormModal({ isOpen, onClose, employee = null, onSaved })
         leaveEndDate: toInputDateFormat(employee.leaveEndDate),
       });
     } else {
+      setSelectedCountryCode('+1');
+      setPhoneDigits('');
       setFormData({
         fullName: '',
         email: '',
-        phone: '',
         department: 'Development',
         role: '',
         joiningDate: toInputDateFormat(new Date()),
@@ -67,6 +98,31 @@ export function EmployeeFormModal({ isOpen, onClose, employee = null, onSaved })
     if (serverError) setServerError(null);
   };
 
+  const handlePhoneChange = (e) => {
+    const rawInput = e.target.value;
+    // Strip all non-digit characters
+    const digitsOnly = rawInput.replace(/\D/g, '');
+    // Strictly cap at maxDigits for selected country so users cannot type unlimited numbers
+    const limitedDigits = digitsOnly.slice(0, activeCountry.maxDigits);
+    setPhoneDigits(limitedDigits);
+    if (formErrors.phone) {
+      setFormErrors((prev) => ({ ...prev, phone: null }));
+    }
+    if (serverError) setServerError(null);
+  };
+
+  const handleCountryChange = (e) => {
+    const newCode = e.target.value;
+    setSelectedCountryCode(newCode);
+    const newCountry = COUNTRY_OPTIONS.find((c) => c.code === newCode) || COUNTRY_OPTIONS[0];
+    // Trim digits if new country has a lower max limit
+    setPhoneDigits((prev) => prev.slice(0, newCountry.maxDigits));
+    if (formErrors.phone) {
+      setFormErrors((prev) => ({ ...prev, phone: null }));
+    }
+    if (serverError) setServerError(null);
+  };
+
   const validate = () => {
     const errors = {};
     if (!formData.fullName.trim()) errors.fullName = 'Full name is required';
@@ -77,6 +133,13 @@ export function EmployeeFormModal({ isOpen, onClose, employee = null, onSaved })
     }
     if (!formData.role.trim()) errors.role = 'Role is required';
     if (!formData.joiningDate) errors.joiningDate = 'Joining date is required';
+
+    if (phoneDigits) {
+      const minRequired = Math.max(7, activeCountry.maxDigits - 2);
+      if (phoneDigits.length < minRequired) {
+        errors.phone = `Phone number must be at least ${minRequired} digits for ${activeCountry.name}`;
+      }
+    }
 
     if (formData.status === 'On Leave') {
       if (!formData.leaveStartDate) {
@@ -105,10 +168,16 @@ export function EmployeeFormModal({ isOpen, onClose, employee = null, onSaved })
       ? formData.skills.split(',').map((s) => s.trim()).filter(Boolean)
       : [];
 
+    let finalPhone = '';
+    if (phoneDigits) {
+      const formatted = formatPhoneNumber(phoneDigits, activeCountry.format);
+      finalPhone = `${activeCountry.code} ${formatted}`;
+    }
+
     const payload = {
       fullName: formData.fullName.trim(),
       email: formData.email.trim().toLowerCase(),
-      phone: formData.phone.trim(),
+      phone: finalPhone,
       department: formData.department,
       role: formData.role.trim(),
       joiningDate: formData.joiningDate,
@@ -203,19 +272,52 @@ export function EmployeeFormModal({ isOpen, onClose, employee = null, onSaved })
             )}
           </div>
 
-          {/* Phone */}
+          {/* Phone with Country Code and Formatting */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
               Phone Number
             </label>
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="e.g. +1 (555) 019-2834"
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
-            />
+            <div
+              className={`flex rounded-xl border overflow-hidden transition-all bg-white shadow-2xs ${
+                formErrors.phone
+                  ? 'border-rose-300 ring-2 ring-rose-200'
+                  : 'border-slate-200 focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500'
+              }`}
+            >
+              {/* Country Code with Country Name */}
+              <select
+                value={selectedCountryCode}
+                onChange={handleCountryChange}
+                className="bg-slate-50 text-slate-800 text-xs font-semibold px-2.5 py-2 border-r border-slate-200 focus:outline-none cursor-pointer hover:bg-slate-100 transition-colors max-w-[150px] sm:max-w-[195px] truncate"
+                title="Select country code"
+              >
+                {COUNTRY_OPTIONS.map((c) => (
+                  <option key={`${c.shortName}-${c.code}`} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Formatted Phone Input */}
+              <input
+                type="tel"
+                value={formatPhoneNumber(phoneDigits, activeCountry.format)}
+                onChange={handlePhoneChange}
+                placeholder={activeCountry.format.replace(/X/g, '0')}
+                className="w-full px-3.5 py-2 text-sm text-slate-900 bg-white focus:outline-none placeholder-slate-400 font-mono tracking-wider"
+              />
+            </div>
+            {formErrors.phone && (
+              <p className="text-xs text-rose-600 mt-1 font-medium">{formErrors.phone}</p>
+            )}
+            <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+              <span>
+                Format: <span className="font-mono text-slate-600 font-semibold">{activeCountry.code} {activeCountry.format}</span>
+              </span>
+              <span className={`font-mono text-xs ${phoneDigits.length === activeCountry.maxDigits ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                {phoneDigits.length} / {activeCountry.maxDigits} digits
+              </span>
+            </div>
           </div>
 
           {/* Department */}
